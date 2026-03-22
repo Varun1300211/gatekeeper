@@ -297,6 +297,32 @@ Test file:
 - [GatekeeperEvaluationServiceTest.java](/Users/varun/gatekeeper/src/test/java/com/gatekeeper/service/GatekeeperEvaluationServiceTest.java)
 - [GatekeeperEvaluationCachingTest.java](/Users/varun/gatekeeper/src/test/java/com/gatekeeper/service/GatekeeperEvaluationCachingTest.java)
 
+Run tests locally:
+
+```bash
+./mvnw test
+```
+
+## CI Pipeline
+
+The project includes a GitHub Actions pipeline at:
+
+- [ci.yml](/Users/varun/gatekeeper/.github/workflows/ci.yml)
+
+It runs two stages:
+
+- `Build`
+  - `./mvnw -B -DskipTests clean package`
+- `Unit Tests`
+  - `./mvnw -B test`
+
+The pipeline triggers on:
+
+- pushes to `main`, `master`, `develop`, `feature/**`, and `codex/**`
+- pull requests
+
+You can view pipeline runs in the GitHub repository `Actions` tab after pushing your branch.
+
 ## Configuration
 
 ### Default Profile: H2
