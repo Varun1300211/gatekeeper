@@ -3,6 +3,14 @@ spring:
     name: GateKeeper
   profiles:
     default: h2
+  cache:
+    cache-names: gatekeeperEvaluations
+  data:
+    redis:
+      repositories:
+        enabled: false
+  jpa:
+    open-in-view: false
 
 server:
   port: 8080

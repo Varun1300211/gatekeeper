@@ -6,6 +6,8 @@ GateKeeper is a Spring Boot application for managing GateKeeper flags, environme
 
 - GateKeeper flag CRUD
 - Environment-aware rule management
+- Evaluation caching with cache invalidation
+- Audit logging for flag and rule changes
 - Rule types:
   - `GLOBAL`
   - `USER_TARGET`
@@ -24,6 +26,8 @@ GateKeeper is a Spring Boot application for managing GateKeeper flags, environme
 - Spring Data JPA
 - Thymeleaf
 - Lombok
+- Spring Cache
+- Redis
 - H2
 - PostgreSQL
 - JUnit 5 / Mockito
@@ -34,6 +38,7 @@ GateKeeper is a Spring Boot application for managing GateKeeper flags, environme
 com.gatekeeper
 ├── GateKeeperApplication
 ├── config
+│   ├── CacheConfig
 │   ├── DataInitializer
 │   └── DataSourceConfig
 ├── controller
@@ -49,13 +54,16 @@ com.gatekeeper
 │   ├── FlagRule
 │   ├── GatekeeperFlag
 │   ├── RuleType
+│   ├── AuditLog
 │   └── UserTarget
 ├── repository
+│   ├── AuditLogRepository
 │   ├── EnvironmentRepository
 │   ├── FlagRuleRepository
 │   ├── GatekeeperFlagRepository
 │   └── UserTargetRepository
 └── service
+    ├── AuditLogService
     ├── GatekeeperEvaluationService
     ├── GatekeeperFlagService
     └── RuleManagementService
@@ -107,6 +115,18 @@ Represents a targeted user attached to a `USER_TARGET` rule:
 - `flagRule`
 - `userId`
 
+### `AuditLog`
+
+Represents an audit trail entry for configuration changes:
+
+- `id`
+- `entityType`
+- `entityId`
+- `action`
+- `actor`
+- `details`
+- `createdAt`
+
 ## Evaluation Logic
 
 `GatekeeperEvaluationService` evaluates a GateKeeper flag using this order:
@@ -121,6 +141,60 @@ Represents a targeted user attached to a `USER_TARGET` rule:
 5. Otherwise return `false`
 
 This makes rollout results deterministic for the same user, flag, and environment.
+
+## Caching
+
+The evaluation path is the highest-traffic operation in a real GateKeeper platform, so the project now includes caching for evaluation results.
+
+### What is cached
+
+- `GatekeeperEvaluationService#evaluate(flagKey, userId, environment)`
+
+Cache key format:
+
+- `flagKey:userId:environment`
+
+Example:
+
+- `beta-checkout:alice:prod`
+
+### Cache behavior
+
+- default mode uses an in-memory cache for local development
+- Redis mode uses Redis-backed caching with a 10 minute TTL
+- any flag create/update/delete clears the evaluation cache
+- any rule add/update/target/status change also clears the evaluation cache
+
+This keeps evaluation fast while avoiding stale results after configuration changes.
+
+## Audit Logging
+
+GateKeeper now records audit entries whenever configuration changes happen.
+
+### Logged events
+
+- GateKeeper flag created
+- GateKeeper flag updated
+- GateKeeper flag deleted
+- rule created
+- user targets added
+- percentage rollout updated
+- rule enabled or disabled
+
+Each audit entry records:
+
+- entity type
+- entity id
+- action
+- actor
+- details
+- timestamp
+
+Current actor is stored as:
+
+- `system`
+
+This is a good base for later extension to authenticated users or admin identities.
 
 ## REST API
 
@@ -163,6 +237,11 @@ Example response:
 - `POST /api/rules/{ruleId}/targets`
 - `PUT /api/rules/{ruleId}/percentage`
 - `PATCH /api/rules/{ruleId}/status`
+
+### Audit Logs
+
+- `GET /api/audit-logs`
+- `GET /api/audit-logs?entityType=GATEKEEPER_FLAG&entityId=1`
 
 Example add rule request:
 
@@ -209,10 +288,14 @@ Unit tests currently cover the GateKeeper evaluation service:
 - targeted user rule
 - percentage rollout deterministic behavior
 - same user always gets the same result
+- caching returns the same result without re-hitting repositories for repeated requests
+- audit log service response mapping and default actor behavior
 
 Test file:
 
+- [AuditLogServiceTest.java](/Users/varun/gatekeeper/src/test/java/com/gatekeeper/service/AuditLogServiceTest.java)
 - [GatekeeperEvaluationServiceTest.java](/Users/varun/gatekeeper/src/test/java/com/gatekeeper/service/GatekeeperEvaluationServiceTest.java)
+- [GatekeeperEvaluationCachingTest.java](/Users/varun/gatekeeper/src/test/java/com/gatekeeper/service/GatekeeperEvaluationCachingTest.java)
 
 ## Configuration
 
@@ -221,7 +304,29 @@ Test file:
 The application uses the `h2` profile by default.
 
 - in-memory database
+- in-memory cache
 - H2 console enabled at `/h2-console`
+
+### Redis Profile
+
+Use the `redis` profile when you want Redis-backed caching.
+
+Default values in `application-redis.yml`:
+
+- host: `localhost`
+- port: `6379`
+
+Run with both H2 and Redis:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=h2,redis
+```
+
+If you have Docker installed, a quick local Redis instance is:
+
+```bash
+docker run --name gatekeeper-redis -p 6379:6379 redis:7
+```
 
 ### PostgreSQL Profile
 
@@ -291,6 +396,27 @@ Or:
 mvn spring-boot:run -Dspring-boot.run.profiles=postgres
 ```
 
+### Run With H2 And Redis
+
+Start Redis first:
+
+```bash
+docker run --name gatekeeper-redis -p 6379:6379 redis:7
+```
+
+Then run the app:
+
+```bash
+cd /Users/varun/gatekeeper
+./mvnw spring-boot:run -Dspring-boot.run.profiles=h2,redis
+```
+
+Or:
+
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=h2,redis
+```
+
 ## How To Try The App
 
 One simple manual flow:
@@ -317,21 +443,29 @@ flowchart LR
     API["REST Clients"] --> GMC["GatekeeperManagementController"]
     API --> GEC["GatekeeperEvaluationController"]
     API --> RMC["RuleManagementController"]
+    API --> ALC["AuditLogController"]
     MVC --> GFS["GatekeeperFlagService"]
     GEC --> GES["GatekeeperEvaluationService"]
     GMC --> GFS
     RMC --> RMS["RuleManagementService"]
+    GFS --> ALS["AuditLogService"]
+    RMS --> ALS
+    ALC --> ALS
+    GES --> CACHE["Cache Layer"]
     GES --> GFR["GatekeeperFlagRepository"]
     GES --> ER["EnvironmentRepository"]
     GES --> FR["FlagRuleRepository"]
     GES --> UTR["UserTargetRepository"]
+    ALS --> ALR["AuditLogRepository"]
     GFS --> GFR
     RMS --> GFR
     RMS --> ER
     RMS --> FR
     RMS --> UTR
+    CACHE --> REDIS["Redis or Local In-Memory Cache"]
     GFR --> DB[("H2 / PostgreSQL")]
     ER --> DB
     FR --> DB
     UTR --> DB
+    ALR --> DB
 ```

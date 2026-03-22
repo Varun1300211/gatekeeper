@@ -10,8 +10,10 @@ import com.gatekeeper.repository.GatekeeperFlagRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.gatekeeper.config.CacheConfig.EVALUATION_CACHE;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class GatekeeperFlagService {
 
     private final GatekeeperFlagRepository gatekeeperFlagRepository;
     private final FlagEvaluationEngine flagEvaluationEngine;
+    private final AuditLogService auditLogService;
 
     @Transactional(readOnly = true)
     public List<GatekeeperFlagResponse> getAllFlags() {
@@ -35,6 +38,7 @@ public class GatekeeperFlagService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public GatekeeperFlagResponse createFlag(GatekeeperFlagRequest request) {
         GatekeeperFlag gatekeeperFlag = GatekeeperFlag.builder()
                 .key(request.getKey())
@@ -43,10 +47,17 @@ public class GatekeeperFlagService {
                 .enabled(request.isEnabled())
                 .build();
 
-        return toResponse(gatekeeperFlagRepository.save(gatekeeperFlag));
+        GatekeeperFlag savedFlag = gatekeeperFlagRepository.save(gatekeeperFlag);
+        auditLogService.log(
+                "GATEKEEPER_FLAG",
+                savedFlag.getId(),
+                "CREATED",
+                "Created GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled());
+        return toResponse(savedFlag);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public GatekeeperFlagResponse updateFlag(Long id, GatekeeperFlagRequest request) {
         GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + id));
@@ -56,15 +67,26 @@ public class GatekeeperFlagService {
         gatekeeperFlag.setDescription(request.getDescription());
         gatekeeperFlag.setEnabled(request.isEnabled());
 
-        return toResponse(gatekeeperFlagRepository.save(gatekeeperFlag));
+        GatekeeperFlag savedFlag = gatekeeperFlagRepository.save(gatekeeperFlag);
+        auditLogService.log(
+                "GATEKEEPER_FLAG",
+                savedFlag.getId(),
+                "UPDATED",
+                "Updated GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled());
+        return toResponse(savedFlag);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public void deleteFlag(Long id) {
-        if (!gatekeeperFlagRepository.existsById(id)) {
-            throw new EntityNotFoundException("Gatekeeper flag not found: " + id);
-        }
+        GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + id));
         gatekeeperFlagRepository.deleteById(id);
+        auditLogService.log(
+                "GATEKEEPER_FLAG",
+                id,
+                "DELETED",
+                "Deleted GateKeeper flag '" + gatekeeperFlag.getKey() + "'");
     }
 
     @Transactional(readOnly = true)

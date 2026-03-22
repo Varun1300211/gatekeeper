@@ -17,8 +17,10 @@ import com.gatekeeper.repository.UserTargetRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.gatekeeper.config.CacheConfig.EVALUATION_CACHE;
 
 @Service
 @RequiredArgsConstructor
@@ -28,8 +30,10 @@ public class RuleManagementService {
     private final EnvironmentRepository environmentRepository;
     private final FlagRuleRepository flagRuleRepository;
     private final UserTargetRepository userTargetRepository;
+    private final AuditLogService auditLogService;
 
     @Transactional
+    @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public RuleResponse addRuleToFlag(Long flagId, RuleRequest request) {
         GatekeeperFlag flag = gatekeeperFlagRepository.findById(flagId)
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + flagId));
@@ -44,10 +48,18 @@ public class RuleManagementService {
                 .enabled(request.isEnabled())
                 .build();
 
-        return toResponse(flagRuleRepository.save(rule));
+        FlagRule savedRule = flagRuleRepository.save(rule);
+        auditLogService.log(
+                "FLAG_RULE",
+                savedRule.getId(),
+                "CREATED",
+                "Added " + savedRule.getRuleType() + " rule for flag '" + flag.getKey()
+                        + "' in environment '" + environment.getName() + "'");
+        return toResponse(savedRule);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public RuleResponse addUserTargets(Long ruleId, UserTargetsRequest request) {
         FlagRule rule = findRule(ruleId);
 
@@ -60,21 +72,40 @@ public class RuleManagementService {
                 .toList();
 
         userTargetRepository.saveAll(targets);
+        auditLogService.log(
+                "FLAG_RULE",
+                rule.getId(),
+                "USER_TARGETS_UPDATED",
+                "Added user targets " + request.getUserIds() + " to rule " + rule.getId());
         return toResponse(findRule(ruleId));
     }
 
     @Transactional
+    @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public RuleResponse setPercentageRollout(Long ruleId, PercentageRolloutRequest request) {
         FlagRule rule = findRule(ruleId);
         rule.setPercentage(request.getPercentage());
-        return toResponse(flagRuleRepository.save(rule));
+        FlagRule savedRule = flagRuleRepository.save(rule);
+        auditLogService.log(
+                "FLAG_RULE",
+                savedRule.getId(),
+                "PERCENTAGE_UPDATED",
+                "Set percentage rollout to " + request.getPercentage() + " for rule " + savedRule.getId());
+        return toResponse(savedRule);
     }
 
     @Transactional
+    @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public RuleResponse updateRuleStatus(Long ruleId, RuleStatusUpdateRequest request) {
         FlagRule rule = findRule(ruleId);
         rule.setEnabled(request.isEnabled());
-        return toResponse(flagRuleRepository.save(rule));
+        FlagRule savedRule = flagRuleRepository.save(rule);
+        auditLogService.log(
+                "FLAG_RULE",
+                savedRule.getId(),
+                "STATUS_UPDATED",
+                "Set rule " + savedRule.getId() + " enabled=" + request.isEnabled());
+        return toResponse(savedRule);
     }
 
     @Transactional(readOnly = true)

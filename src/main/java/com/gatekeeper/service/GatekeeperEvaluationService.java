@@ -11,8 +11,10 @@ import com.gatekeeper.repository.UserTargetRepository;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.gatekeeper.config.CacheConfig.EVALUATION_CACHE;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class GatekeeperEvaluationService {
     private final UserTargetRepository userTargetRepository;
 
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = EVALUATION_CACHE, key = "#flagKey + ':' + #userId + ':' + #environmentName")
     public boolean evaluate(String flagKey, String userId, String environmentName) {
         GatekeeperFlag flag = gatekeeperFlagRepository.findByKey(flagKey)
                 .orElse(null);
