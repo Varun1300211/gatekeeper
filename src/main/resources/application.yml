@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: GateKeeper
+  profiles:
+    default: h2
+
+server:
+  port: 8080

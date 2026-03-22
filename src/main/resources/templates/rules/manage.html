@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateKeeper - Rule Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+        table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f5f5f5; }
+        form { margin: 0; }
+        .section { margin-top: 28px; }
+        label { display: block; margin-top: 8px; font-weight: bold; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 8px; margin-top: 4px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    </style>
+</head>
+<body>
+<h1>Rule Management</h1>
+<p>
+    <a th:href="@{/flags}">Back to flag list</a>
+    |
+    <a th:href="@{/flags/{id}(id=${flag.id})}">Back to flag details</a>
+</p>
+
+<h2 th:text="${flag.name + ' (' + flag.key + ')'}">Flag</h2>
+
+<div class="section">
+    <h3>Existing Rules</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Environment</th>
+            <th>Type</th>
+            <th>Percentage</th>
+            <th>Enabled</th>
+            <th>User Targets</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(rules)}">
+            <td colspan="7">No rules configured yet.</td>
+        </tr>
+        <tr th:each="rule : ${rules}">
+            <td th:text="${rule.id}">1</td>
+            <td th:text="${rule.environment}">test</td>
+            <td th:text="${rule.ruleType}">USER_TARGET</td>
+            <td th:text="${rule.percentage != null ? rule.percentage : '-'}">50</td>
+            <td th:text="${rule.enabled}">true</td>
+            <td th:text="${#lists.isEmpty(rule.userTargets) ? '-' : #strings.listJoin(rule.userTargets, ', ')}">alice</td>
+            <td>
+                <form th:action="@{/rules/{ruleId}/status(ruleId=${rule.id}, flagId=${flag.id})}" method="post">
+                    <input type="hidden" name="enabled" th:value="${!rule.enabled}">
+                    <button type="submit" th:text="${rule.enabled ? 'Disable' : 'Enable'}">Disable</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="section grid">
+    <div>
+        <h3>Add Rule</h3>
+        <form th:action="@{/flags/{id}/rules(id=${flag.id})}" th:object="${ruleForm}" method="post">
+            <label for="environment">Environment</label>
+            <select id="environment" th:field="*{environment}">
+                <option th:each="environment : ${availableEnvironments}"
+                        th:value="${environment}"
+                        th:text="${environment}">test</option>
+            </select>
+
+            <label for="ruleType">Rule Type</label>
+            <select id="ruleType" th:field="*{ruleType}">
+                <option th:each="ruleType : ${ruleTypes}"
+                        th:value="${ruleType}"
+                        th:text="${ruleType}">GLOBAL</option>
+            </select>
+
+            <label for="percentage">Percentage</label>
+            <input id="percentage" type="number" min="0" max="100" th:field="*{percentage}">
+
+            <label for="enabled">Enabled</label>
+            <select id="enabled" th:field="*{enabled}">
+                <option th:value="true">true</option>
+                <option th:value="false">false</option>
+            </select>
+
+            <p><button type="submit">Add Rule</button></p>
+        </form>
+    </div>
+
+    <div>
+        <h3>Add User Targets</h3>
+        <p>Enter comma-separated user IDs for a USER_TARGET rule.</p>
+        <div th:each="rule : ${rules}" th:if="${rule.ruleType.name() == 'USER_TARGET'}">
+            <h4 th:text="${'Rule #' + rule.id + ' - ' + rule.environment}">Rule</h4>
+            <form th:action="@{/rules/{ruleId}/targets(ruleId=${rule.id}, flagId=${flag.id})}" th:object="${targetsForm}" method="post">
+                <label th:for="${'userIds-' + rule.id}">User IDs</label>
+                <input th:id="${'userIds-' + rule.id}" type="text" th:field="*{userIds}">
+                <p><button type="submit">Add Targets</button></p>
+            </form>
+        </div>
+    </div>
+
+    <div>
+        <h3>Set Percentage Rollout</h3>
+        <p>Update rollout for PERCENTAGE rules.</p>
+        <div th:each="rule : ${rules}" th:if="${rule.ruleType.name() == 'PERCENTAGE'}">
+            <h4 th:text="${'Rule #' + rule.id + ' - ' + rule.environment}">Rule</h4>
+            <form th:action="@{/rules/{ruleId}/percentage(ruleId=${rule.id}, flagId=${flag.id})}" th:object="${percentageForm}" method="post">
+                <label th:for="${'percentage-' + rule.id}">Percentage</label>
+                <input th:id="${'percentage-' + rule.id}" type="number" min="0" max="100" th:field="*{percentage}">
+                <p><button type="submit">Update Percentage</button></p>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

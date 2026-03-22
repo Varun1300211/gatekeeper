@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateKeeper - Create Flag</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+        form { max-width: 720px; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type="text"], textarea, select { width: 100%; padding: 8px; margin-top: 4px; }
+        textarea { min-height: 100px; }
+        .actions { margin-top: 16px; }
+    </style>
+</head>
+<body>
+<h1>Create GateKeeper Flag</h1>
+<p><a th:href="@{/flags}">Back to flag list</a></p>
+
+<form th:action="@{/flags/create}" th:object="${flagForm}" method="post">
+    <label for="key">Key</label>
+    <input id="key" type="text" th:field="*{key}" required>
+
+    <label for="name">Name</label>
+    <input id="name" type="text" th:field="*{name}" required>
+
+    <label for="description">Description</label>
+    <textarea id="description" th:field="*{description}"></textarea>
+
+    <label for="enabled">Enabled</label>
+    <select id="enabled" th:field="*{enabled}">
+        <option th:value="true">true</option>
+        <option th:value="false">false</option>
+    </select>
+
+    <div class="actions">
+        <button type="submit">Create Flag</button>
+    </div>
+</form>
+</body>
+</html>

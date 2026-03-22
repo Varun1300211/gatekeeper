@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateKeeper - Flags</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+        a { color: #0b57d0; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .actions { margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f5f5f5; }
+        form { display: inline; }
+        .muted { color: #666; }
+    </style>
+</head>
+<body>
+<h1>GateKeeper Flags</h1>
+<div class="actions">
+    <a th:href="@{/flags/create}">Create New Flag</a>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Key</th>
+        <th>Name</th>
+        <th>Enabled</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${#lists.isEmpty(flags)}">
+        <td colspan="7" class="muted">No GateKeeper flags found.</td>
+    </tr>
+    <tr th:each="flag : ${flags}">
+        <td th:text="${flag.id}">1</td>
+        <td th:text="${flag.key}">checkout</td>
+        <td th:text="${flag.name}">Checkout Flag</td>
+        <td th:text="${flag.enabled}">true</td>
+        <td th:text="${flag.createdAt}">2026-03-21T10:00</td>
+        <td th:text="${flag.updatedAt}">2026-03-21T10:00</td>
+        <td>
+            <a th:href="@{/flags/{id}(id=${flag.id})}">Details</a>
+            |
+            <a th:href="@{/flags/{id}/rules(id=${flag.id})}">Rules</a>
+            |
+            <form th:action="@{/flags/{id}/delete(id=${flag.id})}" method="post">
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

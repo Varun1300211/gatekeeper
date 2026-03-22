@@ -1,0 +1,10 @@
+/target/
+/.mvn/
+*.log
+
+# IDE
+/.idea/
+*.iml
+
+# OS
+.DS_Store

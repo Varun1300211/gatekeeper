@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateKeeper - Flag Details</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type="text"], textarea, select { width: 100%; padding: 8px; margin-top: 4px; }
+        textarea { min-height: 100px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f5f5f5; }
+        .actions { margin-top: 16px; }
+    </style>
+</head>
+<body>
+<h1>Flag Details</h1>
+<p>
+    <a th:href="@{/flags}">Back to flag list</a>
+    |
+    <a th:href="@{/flags/{id}/rules(id=${flag.id})}">Manage rules</a>
+</p>
+
+<form th:action="@{/flags/{id}/edit(id=${flag.id})}" th:object="${flag}" method="post">
+    <label for="key">Key</label>
+    <input id="key" type="text" th:field="*{key}" required>
+
+    <label for="name">Name</label>
+    <input id="name" type="text" th:field="*{name}" required>
+
+    <label for="description">Description</label>
+    <textarea id="description" th:field="*{description}"></textarea>
+
+    <label for="enabled">Enabled</label>
+    <select id="enabled" th:field="*{enabled}">
+        <option th:value="true">true</option>
+        <option th:value="false">false</option>
+    </select>
+
+    <div class="actions">
+        <button type="submit">Save Changes</button>
+    </div>
+</form>
+
+<h2>Rules</h2>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Environment</th>
+        <th>Type</th>
+        <th>Percentage</th>
+        <th>Enabled</th>
+        <th>User Targets</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${#lists.isEmpty(rules)}">
+        <td colspan="6">No rules configured for this flag.</td>
+    </tr>
+    <tr th:each="rule : ${rules}">
+        <td th:text="${rule.id}">1</td>
+        <td th:text="${rule.environment}">test</td>
+        <td th:text="${rule.ruleType}">GLOBAL</td>
+        <td th:text="${rule.percentage}">50</td>
+        <td th:text="${rule.enabled}">true</td>
+        <td th:text="${#lists.isEmpty(rule.userTargets) ? '-' : #strings.listJoin(rule.userTargets, ', ')}">alice, bob</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
