@@ -318,7 +318,7 @@ It runs two stages:
 
 The pipeline triggers on:
 
-- pushes to `main`, `master`, `develop`, `feature/**`, and `codex/**`
+- pushes to `main`, `develop` and `feature/**`
 - pull requests
 
 You can view pipeline runs in the GitHub repository `Actions` tab after pushing your branch.
