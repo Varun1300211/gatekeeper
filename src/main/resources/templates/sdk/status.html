@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateKeeper - SDK Monitor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+        a { color: #0b57d0; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        form { margin: 16px 0; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type="text"], select { width: 100%; padding: 8px; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f5f5f5; }
+        .actions { margin-top: 12px; }
+        .panel { margin-top: 24px; border: 1px solid #ccc; padding: 16px; background: #f9f9f9; }
+        .muted { color: #666; }
+        .result-true { color: #0b7a39; font-weight: bold; }
+        .result-false { color: #b42318; font-weight: bold; }
+    </style>
+</head>
+<body>
+<h1>GateKeeper SDK Monitor</h1>
+<p>
+    <a th:href="@{/flags}">Back to flag list</a>
+    |
+    <a th:href="@{/evaluate}">Evaluate Flag</a>
+    |
+    <a th:href="@{/metrics}">View Metrics</a>
+    |
+    <a th:href="@{/audit-logs}">View Audit Logs</a>
+</p>
+
+<div class="panel">
+    <h2>SDK Configuration</h2>
+    <p><strong>Base URL:</strong> <span th:text="${sdkStatus.baseUrl}">http://localhost:8080</span></p>
+    <p><strong>Poll Interval:</strong> <span th:text="${sdkStatus.pollIntervalSeconds}">15</span> seconds</p>
+    <p><strong>Local Cache TTL:</strong> <span th:text="${sdkStatus.localCacheTtlSeconds}">30</span> seconds</p>
+</div>
+
+<div class="panel">
+    <h2>Configured Targets</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Flag Key</th>
+            <th>User ID</th>
+            <th>Environment</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(sdkStatus.configuredTargets)}">
+            <td colspan="5" class="muted">No SDK targets configured.</td>
+        </tr>
+        <tr th:each="target : ${sdkStatus.configuredTargets}">
+            <td th:text="${target.id}">target-1</td>
+            <td th:text="${target.flagKey}">beta-checkout</td>
+            <td th:text="${target.userId}">sdk-user</td>
+            <td th:text="${target.environment}">prod</td>
+            <td>
+                <form th:action="@{/sdk/targets/{id}/delete(id=${target.id})}" method="post">
+                    <button type="submit">Remove</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="actions">
+        <form th:action="@{/sdk/refresh-configured}" method="post">
+            <button type="submit">Force Refresh Configured Targets</button>
+        </form>
+        <form th:action="@{/sdk/cache/clear}" method="post">
+            <button type="submit">Clear Local SDK Cache</button>
+        </form>
+    </div>
+</div>
+
+<div class="panel">
+    <h2>Add SDK Target</h2>
+    <p class="muted">Available flag keys are fetched dynamically from the main GateKeeper app, so new flags created in the UI show up here without restarting the simulator.</p>
+    <form th:action="@{/sdk/targets}" th:object="${sdkTargetForm}" method="post">
+        <label for="sdkTargetFlagKey">Flag Key</label>
+        <select id="sdkTargetFlagKey" th:field="*{flagKey}">
+            <option value="">Select a flag</option>
+            <option th:each="flagKey : ${availableSdkFlags}" th:value="${flagKey}" th:text="${flagKey}">beta-checkout</option>
+        </select>
+
+        <label for="sdkTargetUserId">User ID</label>
+        <input id="sdkTargetUserId" type="text" th:field="*{userId}" required>
+
+        <label for="sdkTargetEnvironment">Environment</label>
+        <select id="sdkTargetEnvironment" th:field="*{environment}">
+            <option value="test">test</option>
+            <option value="uat">uat</option>
+            <option value="prod">prod</option>
+        </select>
+
+        <div class="actions">
+            <button type="submit">Add SDK Target</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h2>Evaluate Via SDK</h2>
+    <form th:action="@{/sdk/evaluate}" th:object="${sdkEvaluationForm}" method="post">
+        <label for="baseUrl">Base URL</label>
+        <input id="baseUrl" type="text" th:field="*{baseUrl}" required>
+
+        <label for="flagKey">Flag Key</label>
+        <input id="flagKey" type="text" th:field="*{flagKey}" required>
+
+        <label for="userId">User ID</label>
+        <input id="userId" type="text" th:field="*{userId}" required>
+
+        <label for="environment">Environment</label>
+        <select id="environment" th:field="*{environment}">
+            <option value="test">test</option>
+            <option value="uat">uat</option>
+            <option value="prod">prod</option>
+        </select>
+
+        <div class="actions">
+            <button type="submit">Evaluate Using SDK Client</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel" th:if="${sdkEvaluationResult != null}">
+    <h2>Latest SDK Evaluation</h2>
+    <p><strong>Base URL:</strong> <span th:text="${sdkEvaluationResult.baseUrl}">http://localhost:8080</span></p>
+    <p><strong>Flag Key:</strong> <span th:text="${sdkEvaluationResult.flagKey}">beta-checkout</span></p>
+    <p><strong>User ID:</strong> <span th:text="${sdkEvaluationResult.userId}">sdk-user</span></p>
+    <p><strong>Environment:</strong> <span th:text="${sdkEvaluationResult.environment}">prod</span></p>
+    <p>
+        <strong>Enabled:</strong>
+        <span th:text="${sdkEvaluationResult.enabled}"
+              th:classappend="${sdkEvaluationResult.enabled} ? 'result-true' : 'result-false'">true</span>
+    </p>
+    <p><strong>Source:</strong> <span th:text="${sdkEvaluationResult.source}">LOCAL_CACHE</span></p>
+    <p><strong>Last Fetched At:</strong> <span th:text="${sdkEvaluationResult.lastFetchedAt}">2026-03-23T12:30:00</span></p>
+    <p><strong>Expires At:</strong> <span th:text="${sdkEvaluationResult.expiresAt}">2026-03-23T12:30:30</span></p>
+</div>
+
+<div class="panel" th:if="${sdkRefreshResults != null}">
+    <h2>Configured Target Refresh Results</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Flag Key</th>
+            <th>User ID</th>
+            <th>Environment</th>
+            <th>Enabled</th>
+            <th>Source</th>
+            <th>Last Fetched At</th>
+            <th>Expires At</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(sdkRefreshResults)}">
+            <td colspan="7" class="muted">No configured targets were refreshed.</td>
+        </tr>
+        <tr th:each="result : ${sdkRefreshResults}">
+            <td th:text="${result.flagKey}">beta-checkout</td>
+            <td th:text="${result.userId}">sdk-user</td>
+            <td th:text="${result.environment}">prod</td>
+            <td th:text="${result.enabled}">true</td>
+            <td th:text="${result.source}">REMOTE_FETCH</td>
+            <td th:text="${result.lastFetchedAt}">2026-03-23T12:30:00</td>
+            <td th:text="${result.expiresAt}">2026-03-23T12:30:30</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="panel">
+    <h2>Local SDK Cache Entries</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Base URL</th>
+            <th>Flag Key</th>
+            <th>User ID</th>
+            <th>Environment</th>
+            <th>Enabled</th>
+            <th>Last Fetched At</th>
+            <th>Expires At</th>
+            <th>Expired</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(sdkStatus.localCacheEntries)}">
+            <td colspan="8" class="muted">No local SDK cache entries yet. Evaluate a target above or run the simulator.</td>
+        </tr>
+        <tr th:each="entry : ${sdkStatus.localCacheEntries}">
+            <td th:text="${entry.baseUrl}">http://localhost:8080</td>
+            <td th:text="${entry.flagKey}">beta-checkout</td>
+            <td th:text="${entry.userId}">sdk-user</td>
+            <td th:text="${entry.environment}">prod</td>
+            <td th:text="${entry.enabled}">true</td>
+            <td th:text="${entry.lastFetchedAt}">2026-03-23T12:30:00</td>
+            <td th:text="${entry.expiresAt}">2026-03-23T12:30:30</td>
+            <td th:text="${entry.expired}">false</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

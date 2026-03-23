@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateKeeper - Evaluate</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+        a { color: #0b57d0; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        form { max-width: 720px; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type="text"], select { width: 100%; padding: 8px; margin-top: 4px; }
+        .actions { margin-top: 16px; }
+        .panel { margin-top: 24px; border: 1px solid #ccc; padding: 16px; background: #f9f9f9; }
+        .result-true { color: #0b7a39; font-weight: bold; }
+        .result-false { color: #b42318; font-weight: bold; }
+    </style>
+</head>
+<body>
+<h1>Evaluate GateKeeper Flag</h1>
+<p>
+    <a th:href="@{/flags}">Back to flag list</a>
+    |
+    <a th:href="@{/sdk}">SDK Monitor</a>
+    |
+    <a th:href="@{/metrics}">View metrics</a>
+    |
+    <a th:href="@{/audit-logs}">View Audit Logs</a>
+</p>
+
+<form th:action="@{/evaluate}" th:object="${evaluationForm}" method="post">
+    <label for="flagKey">Flag Key</label>
+    <input id="flagKey" type="text" th:field="*{flagKey}" required>
+
+    <label for="userId">User ID</label>
+    <input id="userId" type="text" th:field="*{userId}" required>
+
+    <label for="environment">Environment</label>
+    <select id="environment" th:field="*{environment}">
+        <option value="test">test</option>
+        <option value="uat">uat</option>
+        <option value="prod">prod</option>
+    </select>
+
+    <div class="actions">
+        <button type="submit">Evaluate</button>
+    </div>
+</form>
+
+<div class="panel" th:if="${evaluationResult != null}">
+    <h2>Evaluation Result</h2>
+    <p><strong>Flag Key:</strong> <span th:text="${evaluationResult.flagKey}">beta-checkout</span></p>
+    <p><strong>User ID:</strong> <span th:text="${evaluationResult.userId}">alice</span></p>
+    <p><strong>Environment:</strong> <span th:text="${evaluationResult.environment}">prod</span></p>
+    <p>
+        <strong>Enabled:</strong>
+        <span th:text="${evaluationResult.enabled}"
+              th:classappend="${evaluationResult.enabled} ? 'result-true' : 'result-false'">true</span>
+    </p>
+    <p><a th:href="@{/metrics}">Refresh metrics page</a></p>
+</div>
+</body>
+</html>

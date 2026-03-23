@@ -1,13 +1,22 @@
 package com.gatekeeper.controller;
 
+import com.gatekeeper.dto.AuditLogFilterForm;
+import com.gatekeeper.dto.GatekeeperEvaluationForm;
+import com.gatekeeper.dto.GatekeeperEvaluationResponse;
 import com.gatekeeper.dto.GatekeeperFlagRequest;
 import com.gatekeeper.dto.PercentageRolloutRequest;
 import com.gatekeeper.dto.RuleRequest;
 import com.gatekeeper.dto.RuleStatusForm;
 import com.gatekeeper.dto.RuleStatusUpdateRequest;
+import com.gatekeeper.dto.SdkEvaluationForm;
+import com.gatekeeper.dto.SdkTargetForm;
 import com.gatekeeper.dto.UserTargetsForm;
 import com.gatekeeper.model.RuleType;
+import com.gatekeeper.service.AuditLogService;
+import com.gatekeeper.service.GatekeeperEvaluationService;
 import com.gatekeeper.service.GatekeeperFlagService;
+import com.gatekeeper.service.GatekeeperMetricsService;
+import com.gatekeeper.service.GatekeeperSdkService;
 import com.gatekeeper.service.RuleManagementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -21,7 +30,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 @RequiredArgsConstructor
 public class GatekeeperController {
 
+    private final AuditLogService auditLogService;
+    private final GatekeeperEvaluationService gatekeeperEvaluationService;
     private final GatekeeperFlagService gatekeeperFlagService;
+    private final GatekeeperMetricsService gatekeeperMetricsService;
+    private final GatekeeperSdkService gatekeeperSdkService;
     private final RuleManagementService ruleManagementService;
 
     @GetMapping("/")
@@ -34,6 +47,148 @@ public class GatekeeperController {
     public String listFlags(Model model) {
         model.addAttribute("flags", gatekeeperFlagService.getAllFlags());
         return "flags/list";
+    }
+
+    @GetMapping("/metrics")
+    public String metricsPage(Model model) {
+        model.addAttribute("metrics", gatekeeperMetricsService.getMetrics());
+        return "metrics/list";
+    }
+
+    @GetMapping("/sdk")
+    public String sdkPage(Model model) {
+        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
+        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
+                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                .environment("prod")
+                .build());
+        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
+        model.addAttribute("sdkEvaluationResult", null);
+        model.addAttribute("sdkRefreshResults", null);
+        return "sdk/status";
+    }
+
+    @PostMapping("/sdk/evaluate")
+    public String sdkEvaluate(@ModelAttribute("sdkEvaluationForm") SdkEvaluationForm form, Model model) {
+        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
+        model.addAttribute("sdkEvaluationForm", form);
+        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
+        model.addAttribute(
+                "sdkEvaluationResult",
+                gatekeeperSdkService.evaluateWithSdk(
+                        form.getBaseUrl(),
+                        form.getFlagKey(),
+                        form.getUserId(),
+                        form.getEnvironment()));
+        model.addAttribute("sdkRefreshResults", null);
+        return "sdk/status";
+    }
+
+    @PostMapping("/sdk/refresh-configured")
+    public String sdkRefreshConfigured(Model model) {
+        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
+        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
+                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                .environment("prod")
+                .build());
+        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
+        model.addAttribute("sdkEvaluationResult", null);
+        model.addAttribute("sdkRefreshResults", gatekeeperSdkService.refreshConfiguredTargets());
+        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        return "sdk/status";
+    }
+
+    @PostMapping("/sdk/targets")
+    public String sdkAddTarget(@ModelAttribute("sdkTargetForm") SdkTargetForm form, Model model) {
+        gatekeeperSdkService.addConfiguredTarget(form);
+        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
+        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
+                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                .environment(form.getEnvironment())
+                .build());
+        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
+        model.addAttribute("sdkEvaluationResult", null);
+        model.addAttribute("sdkRefreshResults", null);
+        return "sdk/status";
+    }
+
+    @PostMapping("/sdk/targets/{id}/delete")
+    public String sdkDeleteTarget(@PathVariable String id, Model model) {
+        gatekeeperSdkService.removeConfiguredTarget(id);
+        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
+        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
+                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                .environment("prod")
+                .build());
+        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
+        model.addAttribute("sdkEvaluationResult", null);
+        model.addAttribute("sdkRefreshResults", null);
+        return "sdk/status";
+    }
+
+    @PostMapping("/sdk/cache/clear")
+    public String sdkClearLocalCache(Model model) {
+        gatekeeperSdkService.clearLocalCache();
+        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
+        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
+                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                .environment("prod")
+                .build());
+        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
+        model.addAttribute("sdkEvaluationResult", null);
+        model.addAttribute("sdkRefreshResults", null);
+        return "sdk/status";
+    }
+
+    @GetMapping("/audit-logs")
+    public String auditLogsPage(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String entityType,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long entityId,
+            Model model) {
+        AuditLogFilterForm filterForm = AuditLogFilterForm.builder()
+                .entityType(entityType)
+                .entityId(entityId)
+                .build();
+
+        model.addAttribute("filterForm", filterForm);
+        model.addAttribute(
+                "auditLogs",
+                entityType != null && !entityType.isBlank() && entityId != null
+                        ? auditLogService.getAuditLogs(entityType, entityId)
+                        : auditLogService.getAuditLogs());
+        return "audit/list";
+    }
+
+    @GetMapping("/evaluate")
+    public String evaluatePage(Model model) {
+        model.addAttribute("evaluationForm", GatekeeperEvaluationForm.builder()
+                .environment("prod")
+                .build());
+        model.addAttribute("evaluationResult", null);
+        return "evaluation/form";
+    }
+
+    @PostMapping("/evaluate")
+    public String evaluateFlag(@ModelAttribute("evaluationForm") GatekeeperEvaluationForm form, Model model) {
+        boolean enabled = gatekeeperEvaluationService.evaluate(
+                form.getFlagKey(),
+                form.getUserId(),
+                form.getEnvironment());
+
+        model.addAttribute("evaluationForm", form);
+        model.addAttribute("evaluationResult", GatekeeperEvaluationResponse.builder()
+                .flagKey(form.getFlagKey())
+                .userId(form.getUserId())
+                .environment(form.getEnvironment())
+                .enabled(enabled)
+                .build());
+        return "evaluation/form";
     }
 
     @GetMapping("/flags/create")

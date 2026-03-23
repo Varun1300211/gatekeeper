@@ -65,7 +65,7 @@ class GatekeeperEvaluationCachingTest {
                 .enabled(true)
                 .build();
 
-        when(gatekeeperFlagRepository.findByKey("checkout")).thenReturn(Optional.of(flag));
+        when(gatekeeperFlagRepository.findByKeyAndArchivedFalse("checkout")).thenReturn(Optional.of(flag));
         when(environmentRepository.findByName("prod")).thenReturn(Optional.of(environment));
         when(flagRuleRepository.findByFlagAndEnvironment(flag, environment)).thenReturn(List.of(globalRule));
 
@@ -75,7 +75,7 @@ class GatekeeperEvaluationCachingTest {
         assertThat(firstResult).isTrue();
         assertThat(secondResult).isTrue();
         assertThat(cacheManager.getCache(CacheConfig.EVALUATION_CACHE)).isNotNull();
-        verify(gatekeeperFlagRepository, times(1)).findByKey("checkout");
+        verify(gatekeeperFlagRepository, times(1)).findByKeyAndArchivedFalse("checkout");
         verify(environmentRepository, times(1)).findByName("prod");
         verify(flagRuleRepository, times(1)).findByFlagAndEnvironment(flag, environment);
     }

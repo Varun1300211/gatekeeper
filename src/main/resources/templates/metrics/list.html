@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GateKeeper - Metrics</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; color: #222; }
+        a { color: #0b57d0; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; vertical-align: top; }
+        th { background: #f5f5f5; }
+        .muted { color: #666; }
+    </style>
+</head>
+<body>
+<h1>GateKeeper Metrics</h1>
+<p>
+    <a th:href="@{/flags}">Back to flag list</a>
+    |
+    <a th:href="@{/evaluate}">Evaluate Flag</a>
+    |
+    <a th:href="@{/sdk}">SDK Monitor</a>
+    |
+    <a th:href="@{/audit-logs}">View Audit Logs</a>
+</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Flag Key</th>
+        <th>Total Evaluations</th>
+        <th>Enabled</th>
+        <th>Disabled</th>
+        <th>Cache Hits</th>
+        <th>Cache Misses</th>
+        <th>Enabled Ratio</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${#lists.isEmpty(metrics)}">
+        <td colspan="7" class="muted">No metrics yet. Trigger some evaluations first.</td>
+    </tr>
+    <tr th:each="metric : ${metrics}">
+        <td th:text="${metric.flagKey}">beta-checkout</td>
+        <td th:text="${metric.totalEvaluations}">12</td>
+        <td th:text="${metric.enabledEvaluations}">7</td>
+        <td th:text="${metric.disabledEvaluations}">5</td>
+        <td th:text="${metric.cacheHits}">8</td>
+        <td th:text="${metric.cacheMisses}">4</td>
+        <td th:text="${#numbers.formatDecimal(metric.enabledRatio * 100, 1, 2) + '%'}">58.33%</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

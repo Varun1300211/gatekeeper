@@ -24,6 +24,8 @@
 </p>
 
 <form th:action="@{/flags/{id}/edit(id=${flag.id})}" th:object="${flag}" method="post">
+    <input type="hidden" th:field="*{version}">
+
     <label for="key">Key</label>
     <input id="key" type="text" th:field="*{key}" required>
 
@@ -39,10 +41,19 @@
         <option th:value="false">false</option>
     </select>
 
+    <label for="killSwitchEnabled">Kill Switch Enabled</label>
+    <select id="killSwitchEnabled" th:field="*{killSwitchEnabled}">
+        <option th:value="false">false</option>
+        <option th:value="true">true</option>
+    </select>
+
     <div class="actions">
         <button type="submit">Save Changes</button>
     </div>
 </form>
+
+<p><strong>Current Version:</strong> <span th:text="${flag.version}">0</span></p>
+<p><strong>Archived:</strong> <span th:text="${flag.archived}">false</span></p>
 
 <h2>Rules</h2>
 <table>

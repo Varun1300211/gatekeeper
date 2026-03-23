@@ -28,9 +28,9 @@ public class GatekeeperEvaluationService {
     @Transactional(readOnly = true)
     @Cacheable(cacheNames = EVALUATION_CACHE, key = "#flagKey + ':' + #userId + ':' + #environmentName")
     public boolean evaluate(String flagKey, String userId, String environmentName) {
-        GatekeeperFlag flag = gatekeeperFlagRepository.findByKey(flagKey)
+        GatekeeperFlag flag = gatekeeperFlagRepository.findByKeyAndArchivedFalse(flagKey)
                 .orElse(null);
-        if (flag == null || !flag.isEnabled()) {
+        if (flag == null || !flag.isEnabled() || flag.isKillSwitchEnabled()) {
             return false;
         }
 

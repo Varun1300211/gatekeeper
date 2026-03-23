@@ -20,6 +20,14 @@
 <h1>GateKeeper Flags</h1>
 <div class="actions">
     <a th:href="@{/flags/create}">Create New Flag</a>
+    |
+    <a th:href="@{/evaluate}">Evaluate Flag</a>
+    |
+    <a th:href="@{/sdk}">SDK Monitor</a>
+    |
+    <a th:href="@{/metrics}">View Metrics</a>
+    |
+    <a th:href="@{/audit-logs}">View Audit Logs</a>
 </div>
 
 <table>
@@ -29,6 +37,7 @@
         <th>Key</th>
         <th>Name</th>
         <th>Enabled</th>
+        <th>Kill Switch</th>
         <th>Created</th>
         <th>Updated</th>
         <th>Actions</th>
@@ -36,13 +45,14 @@
     </thead>
     <tbody>
     <tr th:if="${#lists.isEmpty(flags)}">
-        <td colspan="7" class="muted">No GateKeeper flags found.</td>
+        <td colspan="8" class="muted">No active GateKeeper flags found.</td>
     </tr>
     <tr th:each="flag : ${flags}">
         <td th:text="${flag.id}">1</td>
         <td th:text="${flag.key}">checkout</td>
         <td th:text="${flag.name}">Checkout Flag</td>
         <td th:text="${flag.enabled}">true</td>
+        <td th:text="${flag.killSwitchEnabled}">false</td>
         <td th:text="${flag.createdAt}">2026-03-21T10:00</td>
         <td th:text="${flag.updatedAt}">2026-03-21T10:00</td>
         <td>
@@ -51,7 +61,7 @@
             <a th:href="@{/flags/{id}/rules(id=${flag.id})}">Rules</a>
             |
             <form th:action="@{/flags/{id}/delete(id=${flag.id})}" method="post">
-                <button type="submit">Delete</button>
+                <button type="submit">Archive</button>
             </form>
         </td>
     </tr>

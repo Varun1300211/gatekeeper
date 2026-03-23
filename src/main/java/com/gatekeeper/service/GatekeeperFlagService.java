@@ -8,6 +8,7 @@ import com.gatekeeper.evaluation.FlagEvaluationEngine;
 import com.gatekeeper.model.GatekeeperFlag;
 import com.gatekeeper.repository.GatekeeperFlagRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.OptimisticLockException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -25,14 +26,14 @@ public class GatekeeperFlagService {
 
     @Transactional(readOnly = true)
     public List<GatekeeperFlagResponse> getAllFlags() {
-        return gatekeeperFlagRepository.findAll().stream()
+        return gatekeeperFlagRepository.findAllByArchivedFalse().stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public GatekeeperFlagResponse getFlag(Long id) {
-        return gatekeeperFlagRepository.findById(id)
+        return gatekeeperFlagRepository.findByIdAndArchivedFalse(id)
                 .map(this::toResponse)
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + id));
     }
@@ -45,6 +46,7 @@ public class GatekeeperFlagService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .enabled(request.isEnabled())
+                .killSwitchEnabled(request.isKillSwitchEnabled())
                 .build();
 
         GatekeeperFlag savedFlag = gatekeeperFlagRepository.save(gatekeeperFlag);
@@ -52,46 +54,54 @@ public class GatekeeperFlagService {
                 "GATEKEEPER_FLAG",
                 savedFlag.getId(),
                 "CREATED",
-                "Created GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled());
+                "Created GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled()
+                        + " killSwitchEnabled=" + savedFlag.isKillSwitchEnabled());
         return toResponse(savedFlag);
     }
 
     @Transactional
     @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public GatekeeperFlagResponse updateFlag(Long id, GatekeeperFlagRequest request) {
-        GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findById(id)
+        GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findByIdAndArchivedFalse(id)
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + id));
+
+        if (request.getVersion() != null && !request.getVersion().equals(gatekeeperFlag.getVersion())) {
+            throw new OptimisticLockException("Gatekeeper flag was updated by another request");
+        }
 
         gatekeeperFlag.setKey(request.getKey());
         gatekeeperFlag.setName(request.getName());
         gatekeeperFlag.setDescription(request.getDescription());
         gatekeeperFlag.setEnabled(request.isEnabled());
+        gatekeeperFlag.setKillSwitchEnabled(request.isKillSwitchEnabled());
 
         GatekeeperFlag savedFlag = gatekeeperFlagRepository.save(gatekeeperFlag);
         auditLogService.log(
                 "GATEKEEPER_FLAG",
                 savedFlag.getId(),
                 "UPDATED",
-                "Updated GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled());
+                "Updated GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled()
+                        + " killSwitchEnabled=" + savedFlag.isKillSwitchEnabled());
         return toResponse(savedFlag);
     }
 
     @Transactional
     @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public void deleteFlag(Long id) {
-        GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findById(id)
+        GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findByIdAndArchivedFalse(id)
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + id));
-        gatekeeperFlagRepository.deleteById(id);
+        gatekeeperFlag.setArchived(true);
+        gatekeeperFlagRepository.save(gatekeeperFlag);
         auditLogService.log(
                 "GATEKEEPER_FLAG",
                 id,
-                "DELETED",
-                "Deleted GateKeeper flag '" + gatekeeperFlag.getKey() + "'");
+                "ARCHIVED",
+                "Archived GateKeeper flag '" + gatekeeperFlag.getKey() + "'");
     }
 
     @Transactional(readOnly = true)
     public FlagEvaluationResponse evaluateFlag(FlagEvaluationRequest request) {
-        GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findByKey(request.getFeatureKey())
+        GatekeeperFlag gatekeeperFlag = gatekeeperFlagRepository.findByKeyAndArchivedFalse(request.getFeatureKey())
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + request.getFeatureKey()));
 
         return flagEvaluationEngine.evaluate(gatekeeperFlag, request);
@@ -104,6 +114,9 @@ public class GatekeeperFlagService {
                 .name(gatekeeperFlag.getName())
                 .description(gatekeeperFlag.getDescription())
                 .enabled(gatekeeperFlag.isEnabled())
+                .killSwitchEnabled(gatekeeperFlag.isKillSwitchEnabled())
+                .archived(gatekeeperFlag.isArchived())
+                .version(gatekeeperFlag.getVersion())
                 .rolloutPercentage(0)
                 .targetedUsers(null)
                 .targetedSegments(null)

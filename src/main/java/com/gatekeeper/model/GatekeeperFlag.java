@@ -10,6 +10,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,11 +45,20 @@ public class GatekeeperFlag {
     @Column(nullable = false)
     private boolean enabled;
 
+    @Column(nullable = false)
+    private boolean killSwitchEnabled;
+
+    @Column(nullable = false)
+    private boolean archived;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @Version
+    private Long version;
 
     @Builder.Default
     @OneToMany(mappedBy = "flag", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -59,6 +69,7 @@ public class GatekeeperFlag {
         LocalDateTime now = LocalDateTime.now();
         createdAt = now;
         updatedAt = now;
+        archived = false;
     }
 
     @PreUpdate

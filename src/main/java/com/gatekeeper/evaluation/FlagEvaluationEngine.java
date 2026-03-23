@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 public class FlagEvaluationEngine {
 
     public FlagEvaluationResponse evaluate(GatekeeperFlag gatekeeperFlag, FlagEvaluationRequest request) {
-        if (!gatekeeperFlag.isEnabled()) {
+        if (!gatekeeperFlag.isEnabled() || gatekeeperFlag.isKillSwitchEnabled() || gatekeeperFlag.isArchived()) {
             return disabled(request, "Flag is globally disabled");
         }
 

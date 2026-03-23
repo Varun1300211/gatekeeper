@@ -33,6 +33,12 @@
         <option th:value="false">false</option>
     </select>
 
+    <label for="killSwitchEnabled">Kill Switch Enabled</label>
+    <select id="killSwitchEnabled" th:field="*{killSwitchEnabled}">
+        <option th:value="false">false</option>
+        <option th:value="true">true</option>
+    </select>
+
     <div class="actions">
         <button type="submit">Create Flag</button>
     </div>

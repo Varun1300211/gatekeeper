@@ -19,6 +19,9 @@ public class GatekeeperFlagResponse {
     private String name;
     private String description;
     private boolean enabled;
+    private boolean killSwitchEnabled;
+    private boolean archived;
+    private Long version;
     private Integer rolloutPercentage;
     private String targetedUsers;
     private String targetedSegments;

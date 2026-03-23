@@ -35,7 +35,7 @@ public class RuleManagementService {
     @Transactional
     @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
     public RuleResponse addRuleToFlag(Long flagId, RuleRequest request) {
-        GatekeeperFlag flag = gatekeeperFlagRepository.findById(flagId)
+        GatekeeperFlag flag = gatekeeperFlagRepository.findByIdAndArchivedFalse(flagId)
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + flagId));
 
         Environment environment = findEnvironment(request.getEnvironment());
@@ -110,7 +110,7 @@ public class RuleManagementService {
 
     @Transactional(readOnly = true)
     public List<RuleResponse> getRulesForFlag(Long flagId) {
-        GatekeeperFlag flag = gatekeeperFlagRepository.findById(flagId)
+        GatekeeperFlag flag = gatekeeperFlagRepository.findByIdAndArchivedFalse(flagId)
                 .orElseThrow(() -> new EntityNotFoundException("Gatekeeper flag not found: " + flagId));
 
         return flagRuleRepository.findByFlag(flag).stream()

@@ -26,6 +26,10 @@ public class GatekeeperFlagRequest {
 
     private boolean enabled;
 
+    private boolean killSwitchEnabled;
+
+    private Long version;
+
     @Min(0)
     @Max(100)
     private Integer rolloutPercentage;

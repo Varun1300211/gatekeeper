@@ -48,7 +48,7 @@ class GatekeeperEvaluationServiceTest {
                 .enabled(false)
                 .build();
 
-        when(gatekeeperFlagRepository.findByKey("checkout")).thenReturn(Optional.of(flag));
+        when(gatekeeperFlagRepository.findByKeyAndArchivedFalse("checkout")).thenReturn(Optional.of(flag));
 
         boolean result = gatekeeperEvaluationService.evaluate("checkout", "alice", "prod");
 
@@ -61,7 +61,7 @@ class GatekeeperEvaluationServiceTest {
         Environment environment = environment("prod");
         FlagRule globalRule = rule(flag, environment, RuleType.GLOBAL, null, true);
 
-        when(gatekeeperFlagRepository.findByKey("checkout")).thenReturn(Optional.of(flag));
+        when(gatekeeperFlagRepository.findByKeyAndArchivedFalse("checkout")).thenReturn(Optional.of(flag));
         when(environmentRepository.findByName("prod")).thenReturn(Optional.of(environment));
         when(flagRuleRepository.findByFlagAndEnvironment(flag, environment)).thenReturn(List.of(globalRule));
 
@@ -71,12 +71,24 @@ class GatekeeperEvaluationServiceTest {
     }
 
     @Test
+    void returnsFalseWhenKillSwitchIsEnabled() {
+        GatekeeperFlag flag = enabledFlag();
+        flag.setKillSwitchEnabled(true);
+
+        when(gatekeeperFlagRepository.findByKeyAndArchivedFalse("checkout")).thenReturn(Optional.of(flag));
+
+        boolean result = gatekeeperEvaluationService.evaluate("checkout", "alice", "prod");
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
     void returnsTrueWhenUserMatchesTargetedRule() {
         GatekeeperFlag flag = enabledFlag();
         Environment environment = environment("prod");
         FlagRule userTargetRule = rule(flag, environment, RuleType.USER_TARGET, null, true);
 
-        when(gatekeeperFlagRepository.findByKey("checkout")).thenReturn(Optional.of(flag));
+        when(gatekeeperFlagRepository.findByKeyAndArchivedFalse("checkout")).thenReturn(Optional.of(flag));
         when(environmentRepository.findByName("prod")).thenReturn(Optional.of(environment));
         when(flagRuleRepository.findByFlagAndEnvironment(flag, environment)).thenReturn(List.of(userTargetRule));
         when(userTargetRepository.findByFlagRule(userTargetRule)).thenReturn(List.of(
@@ -97,7 +109,7 @@ class GatekeeperEvaluationServiceTest {
         String userId = "alice";
         String environmentName = "prod";
 
-        when(gatekeeperFlagRepository.findByKey(flagKey)).thenReturn(Optional.of(flag));
+        when(gatekeeperFlagRepository.findByKeyAndArchivedFalse(flagKey)).thenReturn(Optional.of(flag));
         when(environmentRepository.findByName(environmentName)).thenReturn(Optional.of(environment));
         when(flagRuleRepository.findByFlagAndEnvironment(flag, environment)).thenReturn(List.of(percentageRule));
 
@@ -115,7 +127,7 @@ class GatekeeperEvaluationServiceTest {
         String userId = "consistent-user";
         String environmentName = "prod";
 
-        when(gatekeeperFlagRepository.findByKey(flagKey)).thenReturn(Optional.of(flag));
+        when(gatekeeperFlagRepository.findByKeyAndArchivedFalse(flagKey)).thenReturn(Optional.of(flag));
         when(environmentRepository.findByName(environmentName)).thenReturn(Optional.of(environment));
         when(flagRuleRepository.findByFlagAndEnvironment(flag, environment)).thenReturn(List.of(percentageRule));
 
