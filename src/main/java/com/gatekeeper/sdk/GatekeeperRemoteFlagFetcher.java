@@ -3,21 +3,19 @@ package com.gatekeeper.sdk;
 import com.gatekeeper.dto.GatekeeperFlagResponse;
 import java.util.List;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 @Component
 public class GatekeeperRemoteFlagFetcher {
 
-    private final RestClient.Builder restClientBuilder;
+    private final GatekeeperSdkRestClientFactory restClientFactory;
 
-    public GatekeeperRemoteFlagFetcher(RestClient.Builder restClientBuilder) {
-        this.restClientBuilder = restClientBuilder;
+    public GatekeeperRemoteFlagFetcher(GatekeeperSdkRestClientFactory restClientFactory) {
+        this.restClientFactory = restClientFactory;
     }
 
     public List<GatekeeperFlagResponse> fetchFlags(String baseUrl) {
-        GatekeeperFlagResponse[] response = restClientBuilder
-                .baseUrl(baseUrl)
-                .build()
+        GatekeeperFlagResponse[] response = restClientFactory
+                .create(baseUrl)
                 .get()
                 .uri("/api/flags")
                 .retrieve()

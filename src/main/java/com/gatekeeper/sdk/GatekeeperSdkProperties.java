@@ -17,6 +17,8 @@ public class GatekeeperSdkProperties {
     private String flagKey = "beta-checkout";
     private String userId = "sdk-user";
     private String environment = "prod";
+    private String username = "viewer";
+    private String password = "viewer123";
     private List<Target> targets = List.of();
 
     public List<ResolvedTarget> getResolvedTargets() {

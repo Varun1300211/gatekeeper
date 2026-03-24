@@ -2,6 +2,8 @@
 
 GateKeeper is a Spring Boot feature flag management platform with REST APIs, simple Thymeleaf admin pages, environment-aware rule evaluation, Redis-backed caching support, audit logs, metrics, and a lightweight Java SDK simulator.
 
+The repo also includes a small React + Vite consumer app in [`demo-frontend/`](demo-frontend) that visually proves the GateKeeper data plane is working.
+
 ## What This Project Supports
 
 - GateKeeper flag CRUD
@@ -20,6 +22,7 @@ GateKeeper is a Spring Boot feature flag management platform with REST APIs, sim
 - In-memory evaluation metrics
 - Browser-based admin pages
 - Java SDK simulation with local client-side caching
+- React + Vite demo consumer app for live UI flag rendering
 - H2 by default
 - PostgreSQL profile support
 - Unit tests and GitHub Actions CI
@@ -81,6 +84,30 @@ com.gatekeeper
     ├── GatekeeperMetricsService
     └── RuleManagementService
 ```
+
+## Demo Consumer App
+
+The repo includes a deployable frontend demo in [`demo-frontend/`](demo-frontend).
+
+### Purpose
+
+- acts as a thin consumer of the GateKeeper data plane
+- calls `GET /api/evaluate` for multiple flags
+- renders different UI states based on real feature decisions
+- is suitable for Netlify or Vercel deployment
+
+### Feature scenarios shown in the demo
+
+- `new-homepage`
+- `beta-checkout`
+- `beta-banner`
+- `new-pricing`
+
+### Demo app architecture
+
+`Browser -> React app -> GateKeeper /api/evaluate -> GateKeeper evaluation service`
+
+This keeps the control plane inside GateKeeper while giving you a public-facing product surface to demo.
 
 ## Domain Model
 
@@ -321,12 +348,16 @@ The project includes a lightweight Java SDK simulation to show how a client appl
 - `gatekeeper.sdk.flag-key`
 - `gatekeeper.sdk.user-id`
 - `gatekeeper.sdk.environment`
+- `gatekeeper.sdk.username`
+- `gatekeeper.sdk.password`
 - `gatekeeper.sdk.poll-interval-seconds`
 - `gatekeeper.sdk.targets[n].flag-key`
 - `gatekeeper.sdk.targets[n].user-id`
 - `gatekeeper.sdk.targets[n].environment`
 
 If `targets` is not set, the SDK falls back to the single default target defined by `flag-key`, `user-id`, and `environment`.
+
+By default, the SDK monitor and simulator use the demo viewer credentials so they can call the secured GateKeeper API out of the box.
 
 ### Run the SDK simulator
 
@@ -379,6 +410,17 @@ Example response:
   "enabled": true
 }
 ```
+
+### CORS for consumer apps
+
+GateKeeper allows cross-origin access to `/api/**` for these common frontend origins by default:
+
+- `http://localhost:5173`
+- `http://127.0.0.1:5173`
+- `https://*.netlify.app`
+- `https://*.vercel.app`
+
+Override them through `gatekeeper.cors.allowed-origin-patterns` if your deployed frontend uses a different domain.
 
 ### Rule Management
 
@@ -446,6 +488,36 @@ The app includes simple functional Thymeleaf pages:
 - `/sdk` - inspect SDK config, add and remove runtime polling targets, evaluate through the SDK client, and view local SDK cache entries
 - `/metrics` - view evaluation counters and ratios
 - `/audit-logs` - inspect configuration changes
+
+## Running The Demo Frontend
+
+1. Start GateKeeper:
+
+```bash
+./mvnw spring-boot:run
+```
+
+2. Start the React demo app:
+
+```bash
+cd demo-frontend
+cp .env.example .env
+npm install
+npm run dev
+```
+
+3. Open:
+
+- GateKeeper admin UI: [http://localhost:8080/flags](http://localhost:8080/flags)
+- Demo consumer app: [http://localhost:5173](http://localhost:5173)
+
+The frontend uses these environment variables:
+
+- `VITE_GATEKEEPER_BASE_URL`
+- `VITE_GATEKEEPER_USERNAME`
+- `VITE_GATEKEEPER_PASSWORD`
+
+This lets the demo app talk to GateKeeper even when Basic Auth is enabled.
 
 ## Testing
 

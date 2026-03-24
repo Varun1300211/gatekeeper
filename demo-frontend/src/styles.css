@@ -1,0 +1,469 @@
+:root {
+  color-scheme: light;
+  font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #123034;
+  background:
+    radial-gradient(circle at top left, rgba(187, 231, 219, 0.7), transparent 35%),
+    radial-gradient(circle at top right, rgba(255, 219, 184, 0.65), transparent 30%),
+    linear-gradient(180deg, #f7faf8 0%, #eef4f1 100%);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+select {
+  font: inherit;
+}
+
+code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  background: rgba(18, 48, 52, 0.06);
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.4rem;
+}
+
+.app-shell {
+  width: min(1200px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+}
+
+.app-header {
+  margin-bottom: 1.5rem;
+}
+
+.app-header h1 {
+  margin: 0.35rem 0 0.75rem;
+  font-size: clamp(2.1rem, 4vw, 3.9rem);
+  line-height: 1.05;
+  max-width: 12ch;
+}
+
+.lead {
+  max-width: 56rem;
+  font-size: 1.05rem;
+  color: #36585d;
+}
+
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.76rem;
+  color: #4f7c6f;
+  font-weight: 700;
+}
+
+.muted {
+  color: #4f676a;
+}
+
+.app-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(300px, 0.95fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.main-column {
+  display: grid;
+  gap: 1rem;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.panel,
+.feature-card {
+  border: 1px solid rgba(18, 48, 52, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+  border-radius: 1.25rem;
+  box-shadow: 0 16px 40px rgba(18, 48, 52, 0.08);
+}
+
+.panel {
+  padding: 1.25rem;
+}
+
+.feature-card {
+  padding: 1.5rem;
+}
+
+.control-bar {
+  display: grid;
+  gap: 1rem;
+}
+
+.control-bar h2,
+.summary h2,
+.architecture-note h2 {
+  margin: 0.3rem 0 0.5rem;
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.45rem;
+  font-weight: 600;
+  color: #24494e;
+}
+
+.field select {
+  width: 100%;
+  border: 1px solid rgba(18, 48, 52, 0.16);
+  border-radius: 0.9rem;
+  background: #fdfefe;
+  padding: 0.8rem 0.95rem;
+  color: #123034;
+}
+
+.state-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.state-banner strong,
+.summary-item strong {
+  display: block;
+}
+
+.spinner {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  border: 3px solid rgba(79, 124, 111, 0.18);
+  border-top-color: #4f7c6f;
+  animation: spin 0.85s linear infinite;
+}
+
+.error-state,
+.error-banner {
+  border-color: rgba(186, 79, 79, 0.25);
+  background: rgba(255, 241, 241, 0.9);
+  color: #7d2c2c;
+}
+
+.error-banner {
+  padding: 0.8rem 0.95rem;
+  border-radius: 0.9rem;
+}
+
+.error-banner.compact {
+  margin-top: 0.75rem;
+}
+
+.beta-banner {
+  background: linear-gradient(135deg, rgba(16, 86, 76, 0.98), rgba(33, 114, 96, 0.92));
+  color: #eefbf6;
+}
+
+.beta-banner h2 {
+  margin: 0.3rem 0 0.5rem;
+}
+
+.beta-banner .eyebrow {
+  color: rgba(238, 251, 246, 0.72);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(220px, 0.8fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.hero-new {
+  background: linear-gradient(135deg, rgba(18, 48, 52, 0.98), rgba(39, 94, 84, 0.92));
+  color: #f6fcfa;
+}
+
+.hero-new .eyebrow {
+  color: rgba(246, 252, 250, 0.68);
+}
+
+.hero-old {
+  background: linear-gradient(180deg, #f8fbfb 0%, #f2f6f5 100%);
+}
+
+.feature-copy h3,
+.section-header h3 {
+  margin: 0.3rem 0 0.65rem;
+  font-size: 1.55rem;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.chip-row span,
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.hero-new .chip-row span,
+.badge {
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+}
+
+.badge.subtle {
+  background: rgba(18, 48, 52, 0.08);
+  color: #35595d;
+}
+
+.hero-metrics,
+.legacy-box {
+  border-radius: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 0.8rem;
+}
+
+.hero-metrics strong {
+  font-size: 1.75rem;
+}
+
+.hero-metrics span,
+.legacy-box span {
+  display: block;
+  color: rgba(246, 252, 250, 0.72);
+}
+
+.legacy-box {
+  background: rgba(18, 48, 52, 0.06);
+  align-content: center;
+}
+
+.legacy-box span {
+  color: #5a7477;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+  margin-bottom: 1rem;
+}
+
+.checkout-grid,
+.pricing-grid,
+.legacy-pricing {
+  display: grid;
+  gap: 1rem;
+}
+
+.checkout-grid {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.checkout-item,
+.checkout-highlight,
+.pricing-grid article,
+.legacy-checkout,
+.legacy-pricing div {
+  border-radius: 1rem;
+  padding: 1rem;
+  background: rgba(18, 48, 52, 0.05);
+}
+
+.checkout-new .checkout-highlight {
+  background: linear-gradient(135deg, rgba(245, 164, 89, 0.2), rgba(255, 210, 165, 0.2));
+}
+
+.checkout-highlight button,
+.legacy-checkout button {
+  margin-top: 0.8rem;
+  border: 0;
+  border-radius: 0.8rem;
+  padding: 0.75rem 1rem;
+  background: #123034;
+  color: white;
+  cursor: pointer;
+}
+
+.pricing-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.featured-tier {
+  background: linear-gradient(180deg, rgba(79, 124, 111, 0.16), rgba(79, 124, 111, 0.06));
+  border: 1px solid rgba(79, 124, 111, 0.2);
+}
+
+.summary {
+  position: sticky;
+  top: 1rem;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+}
+
+.status-pill {
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.status-pill.pending {
+  background: rgba(230, 176, 74, 0.16);
+  color: #8d6115;
+}
+
+.status-pill.ready {
+  background: rgba(79, 124, 111, 0.14);
+  color: #346456;
+}
+
+.context-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 1rem 0 0;
+}
+
+.context-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(18, 48, 52, 0.08);
+}
+
+.context-list dt {
+  font-weight: 700;
+  color: #395e62;
+}
+
+.context-list dd {
+  margin: 0;
+  text-align: right;
+}
+
+.summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 1rem;
+  background: rgba(18, 48, 52, 0.04);
+}
+
+.summary-item p {
+  margin: 0.15rem 0 0;
+  color: #557074;
+  font-size: 0.9rem;
+}
+
+.feature-status {
+  min-width: 88px;
+  text-align: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.feature-status.enabled {
+  background: rgba(79, 124, 111, 0.16);
+  color: #2f6558;
+}
+
+.feature-status.disabled {
+  background: rgba(140, 155, 158, 0.16);
+  color: #53686c;
+}
+
+.feature-status.unknown {
+  background: rgba(230, 176, 74, 0.16);
+  color: #8d6115;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .summary {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    width: min(100% - 1rem, 1200px);
+    padding-top: 1rem;
+  }
+
+  .control-grid,
+  .content-grid,
+  .checkout-grid,
+  .pricing-grid,
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header,
+  .summary-item,
+  .context-list div {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .context-list dd {
+    text-align: left;
+  }
+}

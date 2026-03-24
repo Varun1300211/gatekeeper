@@ -1,6 +1,10 @@
 /target/
 /.mvn/
 *.log
+node_modules/
+dist/
+demo-frontend/node_modules/
+demo-frontend/dist/
 
 # IDE
 /.idea/
@@ -9,5 +13,10 @@
 # OS
 .DS_Store
 
+# Env files
+.env
+demo-frontend/.env
+
 # Postman
 .postman
+postman/

@@ -3,18 +3,16 @@ package com.gatekeeper.sdk;
 import com.gatekeeper.dto.GatekeeperEvaluationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 @Component
 @RequiredArgsConstructor
 public class GatekeeperRemoteEvaluationFetcher {
 
-    private final RestClient.Builder restClientBuilder;
+    private final GatekeeperSdkRestClientFactory restClientFactory;
 
     public GatekeeperEvaluationResponse fetchEvaluation(String baseUrl, String flagKey, String userId, String environment) {
-        return restClientBuilder
-                .baseUrl(baseUrl)
-                .build()
+        return restClientFactory
+                .create(baseUrl)
                 .get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/evaluate")

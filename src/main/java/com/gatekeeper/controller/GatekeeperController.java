@@ -57,93 +57,127 @@ public class GatekeeperController {
 
     @GetMapping("/sdk")
     public String sdkPage(Model model) {
-        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
-        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
-        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
-                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
-                .environment("prod")
-                .build());
-        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
-        model.addAttribute("sdkEvaluationResult", null);
-        model.addAttribute("sdkRefreshResults", null);
+        populateSdkPageModel(
+                model,
+                SdkEvaluationForm.builder()
+                        .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                        .environment("prod")
+                        .build(),
+                SdkTargetForm.builder().environment("prod").build(),
+                null,
+                null,
+                null);
         return "sdk/status";
     }
 
     @PostMapping("/sdk/evaluate")
     public String sdkEvaluate(@ModelAttribute("sdkEvaluationForm") SdkEvaluationForm form, Model model) {
-        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
-        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
-        model.addAttribute("sdkEvaluationForm", form);
-        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
-        model.addAttribute(
-                "sdkEvaluationResult",
-                gatekeeperSdkService.evaluateWithSdk(
-                        form.getBaseUrl(),
-                        form.getFlagKey(),
-                        form.getUserId(),
-                        form.getEnvironment()));
-        model.addAttribute("sdkRefreshResults", null);
+        String sdkMessage = null;
+        com.gatekeeper.dto.SdkEvaluationResponse sdkEvaluationResult = null;
+        try {
+            sdkEvaluationResult = gatekeeperSdkService.evaluateWithSdk(
+                    form.getBaseUrl(),
+                    form.getFlagKey(),
+                    form.getUserId(),
+                    form.getEnvironment());
+        } catch (Exception exception) {
+            sdkMessage = "SDK evaluation failed. Check the base URL, credentials, and whether the target flag exists.";
+        }
+        populateSdkPageModel(
+                model,
+                form,
+                SdkTargetForm.builder().environment("prod").build(),
+                sdkEvaluationResult,
+                null,
+                sdkMessage);
         return "sdk/status";
     }
 
     @PostMapping("/sdk/refresh-configured")
     public String sdkRefreshConfigured(Model model) {
-        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
-        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
-        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
-                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
-                .environment("prod")
-                .build());
-        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
-        model.addAttribute("sdkEvaluationResult", null);
-        model.addAttribute("sdkRefreshResults", gatekeeperSdkService.refreshConfiguredTargets());
-        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
+        String sdkMessage = null;
+        var refreshResults = java.util.List.<com.gatekeeper.dto.SdkEvaluationResponse>of();
+        try {
+            refreshResults = gatekeeperSdkService.refreshConfiguredTargets();
+        } catch (Exception exception) {
+            sdkMessage = "Refreshing configured SDK targets failed. Check the main GateKeeper app URL and credentials.";
+        }
+        populateSdkPageModel(
+                model,
+                SdkEvaluationForm.builder()
+                        .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                        .environment("prod")
+                        .build(),
+                SdkTargetForm.builder().environment("prod").build(),
+                null,
+                refreshResults,
+                sdkMessage);
         return "sdk/status";
     }
 
     @PostMapping("/sdk/targets")
     public String sdkAddTarget(@ModelAttribute("sdkTargetForm") SdkTargetForm form, Model model) {
         gatekeeperSdkService.addConfiguredTarget(form);
-        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
-        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
-        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
-                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
-                .environment(form.getEnvironment())
-                .build());
-        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
-        model.addAttribute("sdkEvaluationResult", null);
-        model.addAttribute("sdkRefreshResults", null);
+        populateSdkPageModel(
+                model,
+                SdkEvaluationForm.builder()
+                        .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                        .environment(form.getEnvironment())
+                        .build(),
+                SdkTargetForm.builder().environment("prod").build(),
+                null,
+                null,
+                null);
         return "sdk/status";
     }
 
     @PostMapping("/sdk/targets/{id}/delete")
     public String sdkDeleteTarget(@PathVariable String id, Model model) {
         gatekeeperSdkService.removeConfiguredTarget(id);
-        model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
-        model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
-        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
-                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
-                .environment("prod")
-                .build());
-        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
-        model.addAttribute("sdkEvaluationResult", null);
-        model.addAttribute("sdkRefreshResults", null);
+        populateSdkPageModel(
+                model,
+                SdkEvaluationForm.builder()
+                        .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                        .environment("prod")
+                        .build(),
+                SdkTargetForm.builder().environment("prod").build(),
+                null,
+                null,
+                null);
         return "sdk/status";
     }
 
     @PostMapping("/sdk/cache/clear")
     public String sdkClearLocalCache(Model model) {
         gatekeeperSdkService.clearLocalCache();
+        populateSdkPageModel(
+                model,
+                SdkEvaluationForm.builder()
+                        .baseUrl(gatekeeperSdkService.defaultBaseUrl())
+                        .environment("prod")
+                        .build(),
+                SdkTargetForm.builder().environment("prod").build(),
+                null,
+                null,
+                null);
+        return "sdk/status";
+    }
+
+    private void populateSdkPageModel(
+            Model model,
+            SdkEvaluationForm sdkEvaluationForm,
+            SdkTargetForm sdkTargetForm,
+            com.gatekeeper.dto.SdkEvaluationResponse sdkEvaluationResult,
+            java.util.List<com.gatekeeper.dto.SdkEvaluationResponse> sdkRefreshResults,
+            String sdkMessage) {
         model.addAttribute("sdkStatus", gatekeeperSdkService.getStatus());
         model.addAttribute("availableSdkFlags", gatekeeperSdkService.getAvailableFlagKeys());
-        model.addAttribute("sdkEvaluationForm", SdkEvaluationForm.builder()
-                .baseUrl(gatekeeperSdkService.defaultBaseUrl())
-                .environment("prod")
-                .build());
-        model.addAttribute("sdkTargetForm", SdkTargetForm.builder().environment("prod").build());
-        model.addAttribute("sdkEvaluationResult", null);
-        model.addAttribute("sdkRefreshResults", null);
-        return "sdk/status";
+        model.addAttribute("availableSdkFlagsError", gatekeeperSdkService.getAvailableFlagKeysError());
+        model.addAttribute("sdkEvaluationForm", sdkEvaluationForm);
+        model.addAttribute("sdkTargetForm", sdkTargetForm);
+        model.addAttribute("sdkEvaluationResult", sdkEvaluationResult);
+        model.addAttribute("sdkRefreshResults", sdkRefreshResults);
+        model.addAttribute("sdkMessage", sdkMessage);
     }
 
     @GetMapping("/audit-logs")

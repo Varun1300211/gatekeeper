@@ -43,6 +43,7 @@ public class GatekeeperSdkService {
     public SdkStatusResponse getStatus() {
         return SdkStatusResponse.builder()
                 .baseUrl(gatekeeperSdkProperties.getBaseUrl())
+                .username(gatekeeperSdkProperties.getUsername())
                 .pollIntervalSeconds(gatekeeperSdkProperties.getPollIntervalSeconds())
                 .localCacheTtlSeconds(gatekeeperSdkProperties.getLocalCacheTtlSeconds())
                 .configuredTargets(getConfiguredTargets())
@@ -94,13 +95,25 @@ public class GatekeeperSdkService {
     }
 
     public List<String> getAvailableFlagKeys() {
+        return getAvailableFlagsLookup().flagKeys();
+    }
+
+    public String getAvailableFlagKeysError() {
+        return getAvailableFlagsLookup().errorMessage();
+    }
+
+    private AvailableFlagsLookup getAvailableFlagsLookup() {
         try {
-            return gatekeeperRemoteFlagFetcher.fetchFlags(gatekeeperSdkProperties.getBaseUrl()).stream()
+            return new AvailableFlagsLookup(
+                    gatekeeperRemoteFlagFetcher.fetchFlags(gatekeeperSdkProperties.getBaseUrl()).stream()
                     .map(GatekeeperFlagResponse::getKey)
                     .sorted(String::compareToIgnoreCase)
-                    .toList();
+                    .toList(),
+                    null);
         } catch (Exception exception) {
-            return List.of();
+            return new AvailableFlagsLookup(
+                    List.of(),
+                    "Unable to load flags from the main GateKeeper app. Check the SDK base URL and credentials.");
         }
     }
 
@@ -191,6 +204,9 @@ public class GatekeeperSdkService {
                 .lastFetchedAt(result.getLastFetchedAt())
                 .expiresAt(result.getExpiresAt())
                 .build();
+    }
+
+    private record AvailableFlagsLookup(List<String> flagKeys, String errorMessage) {
     }
 
     @Getter

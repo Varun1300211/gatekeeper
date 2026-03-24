@@ -1,0 +1,8 @@
+target
+.git
+.idea
+demo-frontend/node_modules
+demo-frontend/dist
+node_modules
+dist
+*.log

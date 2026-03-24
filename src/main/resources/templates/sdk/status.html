@@ -36,8 +36,14 @@
 <div class="panel">
     <h2>SDK Configuration</h2>
     <p><strong>Base URL:</strong> <span th:text="${sdkStatus.baseUrl}">http://localhost:8080</span></p>
+    <p><strong>SDK Auth User:</strong> <span th:text="${sdkStatus.username}">viewer</span></p>
     <p><strong>Poll Interval:</strong> <span th:text="${sdkStatus.pollIntervalSeconds}">15</span> seconds</p>
     <p><strong>Local Cache TTL:</strong> <span th:text="${sdkStatus.localCacheTtlSeconds}">30</span> seconds</p>
+</div>
+
+<div class="panel" th:if="${sdkMessage != null}">
+    <h2>SDK Notice</h2>
+    <p class="result-false" th:text="${sdkMessage}">SDK evaluation failed.</p>
 </div>
 
 <div class="panel">
@@ -83,12 +89,12 @@
 <div class="panel">
     <h2>Add SDK Target</h2>
     <p class="muted">Available flag keys are fetched dynamically from the main GateKeeper app, so new flags created in the UI show up here without restarting the simulator.</p>
+    <p class="muted" th:if="${availableSdkFlagsError != null}" th:text="${availableSdkFlagsError}">
+        Unable to load flags from the main GateKeeper app. Check the SDK base URL and credentials.
+    </p>
     <form th:action="@{/sdk/targets}" th:object="${sdkTargetForm}" method="post">
         <label for="sdkTargetFlagKey">Flag Key</label>
-        <select id="sdkTargetFlagKey" th:field="*{flagKey}">
-            <option value="">Select a flag</option>
-            <option th:each="flagKey : ${availableSdkFlags}" th:value="${flagKey}" th:text="${flagKey}">beta-checkout</option>
-        </select>
+        <input id="sdkTargetFlagKey" type="text" th:field="*{flagKey}" list="availableFlagKeys" required>
 
         <label for="sdkTargetUserId">User ID</label>
         <input id="sdkTargetUserId" type="text" th:field="*{userId}" required>
@@ -108,12 +114,13 @@
 
 <div class="panel">
     <h2>Evaluate Via SDK</h2>
+    <p class="muted">Use the same base URL as the main GateKeeper app. The SDK client will authenticate with the configured SDK credentials automatically.</p>
     <form th:action="@{/sdk/evaluate}" th:object="${sdkEvaluationForm}" method="post">
         <label for="baseUrl">Base URL</label>
         <input id="baseUrl" type="text" th:field="*{baseUrl}" required>
 
         <label for="flagKey">Flag Key</label>
-        <input id="flagKey" type="text" th:field="*{flagKey}" required>
+        <input id="flagKey" type="text" th:field="*{flagKey}" list="availableFlagKeys" required>
 
         <label for="userId">User ID</label>
         <input id="userId" type="text" th:field="*{userId}" required>
@@ -129,6 +136,9 @@
             <button type="submit">Evaluate Using SDK Client</button>
         </div>
     </form>
+    <datalist id="availableFlagKeys">
+        <option th:each="flagKey : ${availableSdkFlags}" th:value="${flagKey}">beta-checkout</option>
+    </datalist>
 </div>
 
 <div class="panel" th:if="${sdkEvaluationResult != null}">
