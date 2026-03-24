@@ -1,5 +1,7 @@
 # GateKeeper
 
+Production-style feature flag platform with control plane / data plane architecture, deterministic rollouts, Redis-backed caching, RBAC, audit logging, and cloud deployment.
+
 GateKeeper is a production-style feature flag platform built with Java and Spring Boot. It combines a control plane for flag management and governance with a low-latency data plane for runtime evaluation, backed by PostgreSQL, Redis, and a lightweight demo frontend.
 
 The project is designed to showcase feature delivery architecture rather than simple CRUD: deterministic rollouts, cache-backed evaluation, auditability, RBAC, and a Java SDK simulator with local TTL caching.
@@ -9,7 +11,6 @@ The project is designed to showcase feature delivery architecture rather than si
 - Frontend Demo (Netlify): [gatekeeper-t5gd.netlify.app](https://gatekeeper-t5gd.netlify.app/)
 - Admin UI / Control Plane (Render): [gatekeeper-t5gd.onrender.com/flags](https://gatekeeper-t5gd.onrender.com/flags)
 - Evaluation API Example: [gatekeeper-t5gd.onrender.com/api/evaluate?flagKey=new-homepage&userId=alice&environment=prod](https://gatekeeper-t5gd.onrender.com/api/evaluate?flagKey=new-homepage&userId=alice&environment=prod)
-- Repository: [github.com/Varun1300211/gatekeeper](https://github.com/Varun1300211/gatekeeper)
 
 ## Screenshots
 
@@ -37,7 +38,7 @@ The project is designed to showcase feature delivery architecture rather than si
 - Redis-backed evaluation caching with cache invalidation on config changes
 - Java SDK simulator with local TTL cache for client-side evaluation behaviour
 
-## High-Level Design
+## Architecture Diagram
 
 ```mermaid
 flowchart TB
@@ -126,6 +127,17 @@ Local defaults:
 - Backend: [http://localhost:8080/flags](http://localhost:8080/flags)
 - Frontend: [http://localhost:5173](http://localhost:5173)
 - Demo auth: `admin/admin123`, `viewer/viewer123`
+
+## Deployment Architecture
+
+GateKeeper is deployed using managed cloud services:
+
+- Backend API hosted on Render
+- PostgreSQL hosted on Neon
+- Redis hosted on Upstash
+- Demo frontend hosted on Netlify
+
+This setup mirrors a typical cloud-native architecture where the application server, cache, and database are independently managed services.
 
 ## Future Improvements
 
