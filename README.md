@@ -11,6 +11,16 @@ The project is designed to showcase feature delivery architecture rather than si
 - Evaluation API Example: [gatekeeper-t5gd.onrender.com/api/evaluate?flagKey=new-homepage&userId=alice&environment=prod](https://gatekeeper-t5gd.onrender.com/api/evaluate?flagKey=new-homepage&userId=alice&environment=prod)
 - Repository: [github.com/Varun1300211/gatekeeper](https://github.com/Varun1300211/gatekeeper)
 
+## Screenshots
+
+**Consumer Demo App**
+
+![GateKeeper frontend demo](images/frontend.png)
+
+**Admin Control Plane**
+
+![GateKeeper backend admin UI](images/backend.png)
+
 ## Architecture Overview
 
 **Control plane**
@@ -26,6 +36,21 @@ The project is designed to showcase feature delivery architecture rather than si
 - Deterministic rollout engine for `GLOBAL`, `USER_TARGET`, and `PERCENTAGE` rules
 - Redis-backed evaluation caching with cache invalidation on config changes
 - Java SDK simulator with local TTL cache for client-side evaluation behaviour
+
+## High-Level Design
+
+```mermaid
+flowchart TB
+    A["Admin / Viewer<br/>Thymeleaf UI"] --> B["GateKeeper Backend<br/>(Render)"]
+    F["Consumer Demo App<br/>(Netlify)"] --> G["/api/evaluate"]
+    H["Java SDK Simulator<br/>Local TTL Cache"] --> G
+    G --> B
+    B --> C["PostgreSQL (Neon)<br/>Flags / Rules / Audit / Environments"]
+    B --> D["Redis Cache (Upstash)<br/>Evaluation Cache"]
+    B --> E["RBAC / Rate Limiting / Health Check"]
+```
+
+At a high level, GateKeeper keeps configuration and governance in the control plane while serving runtime feature decisions through a protected, cached data plane. The admin UI writes durable flag state to PostgreSQL, while demo consumers and SDK clients hit `/api/evaluate`, which is rate-limited, cache-backed with Redis, and powered by deterministic rollout logic.
 
 ## System Architecture
 
