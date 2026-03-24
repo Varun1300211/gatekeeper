@@ -22,6 +22,10 @@ gatekeeper:
       - http://127.0.0.1:5173
       - https://*.netlify.app
       - https://*.vercel.app
+  rate-limit:
+    evaluate:
+      enabled: true
+      requests-per-minute: 60
   sdk:
     base-url: http://localhost:8080
     local-cache-ttl-seconds: 30
