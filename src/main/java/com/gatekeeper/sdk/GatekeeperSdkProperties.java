@@ -14,9 +14,9 @@ public class GatekeeperSdkProperties {
     private String baseUrl = "http://localhost:8080";
     private long pollIntervalSeconds = 15;
     private long localCacheTtlSeconds = 30;
-    private String flagKey = "beta-checkout";
-    private String userId = "sdk-user";
-    private String environment = "prod";
+    private String flagKey;
+    private String userId;
+    private String environment;
     private String username = "viewer";
     private String password = "viewer123";
     private List<Target> targets = List.of();
@@ -32,11 +32,19 @@ public class GatekeeperSdkProperties {
                     .toList();
         }
 
+        if (isBlank(flagKey) || isBlank(userId) || isBlank(environment)) {
+            return List.of();
+        }
+
         return List.of(ResolvedTarget.builder()
                 .flagKey(flagKey)
                 .userId(userId)
                 .environment(environment)
                 .build());
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     @Getter

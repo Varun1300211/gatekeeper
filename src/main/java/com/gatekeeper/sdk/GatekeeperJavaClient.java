@@ -92,6 +92,19 @@ public class GatekeeperJavaClient {
         localCache.clear();
     }
 
+    public int evictLocalCacheForFlag(String flagKey) {
+        if (flagKey == null || flagKey.isBlank()) {
+            return 0;
+        }
+
+        List<String> keysToEvict = localCache.entrySet().stream()
+                .filter(entry -> flagKey.equals(entry.getValue().getFlagKey()))
+                .map(Map.Entry::getKey)
+                .toList();
+        keysToEvict.forEach(localCache::remove);
+        return keysToEvict.size();
+    }
+
     private SdkEvaluationResult toResult(CachedEvaluation cachedEvaluation, SdkEvaluationSource source) {
         return SdkEvaluationResult.builder()
                 .baseUrl(cachedEvaluation.getBaseUrl())

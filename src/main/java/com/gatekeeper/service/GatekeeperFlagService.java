@@ -5,6 +5,7 @@ import com.gatekeeper.dto.GatekeeperFlagResponse;
 import com.gatekeeper.dto.FlagEvaluationRequest;
 import com.gatekeeper.dto.FlagEvaluationResponse;
 import com.gatekeeper.evaluation.FlagEvaluationEngine;
+import com.gatekeeper.messaging.GatekeeperConfigChangedEvent;
 import com.gatekeeper.model.GatekeeperFlag;
 import com.gatekeeper.repository.GatekeeperFlagRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -12,6 +13,7 @@ import jakarta.persistence.OptimisticLockException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import static com.gatekeeper.config.CacheConfig.EVALUATION_CACHE;
@@ -23,6 +25,7 @@ public class GatekeeperFlagService {
     private final GatekeeperFlagRepository gatekeeperFlagRepository;
     private final FlagEvaluationEngine flagEvaluationEngine;
     private final AuditLogService auditLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public List<GatekeeperFlagResponse> getAllFlags() {
@@ -56,6 +59,7 @@ public class GatekeeperFlagService {
                 "CREATED",
                 "Created GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled()
                         + " killSwitchEnabled=" + savedFlag.isKillSwitchEnabled());
+        publishConfigChanged(savedFlag.getKey(), null, savedFlag.getId(), "FLAG_CREATED");
         return toResponse(savedFlag);
     }
 
@@ -69,6 +73,7 @@ public class GatekeeperFlagService {
             throw new OptimisticLockException("Gatekeeper flag was updated by another request");
         }
 
+        String previousFlagKey = gatekeeperFlag.getKey();
         gatekeeperFlag.setKey(request.getKey());
         gatekeeperFlag.setName(request.getName());
         gatekeeperFlag.setDescription(request.getDescription());
@@ -82,6 +87,7 @@ public class GatekeeperFlagService {
                 "UPDATED",
                 "Updated GateKeeper flag '" + savedFlag.getKey() + "' with enabled=" + savedFlag.isEnabled()
                         + " killSwitchEnabled=" + savedFlag.isKillSwitchEnabled());
+        publishConfigChanged(savedFlag.getKey(), previousFlagKey, savedFlag.getId(), "FLAG_UPDATED");
         return toResponse(savedFlag);
     }
 
@@ -97,6 +103,7 @@ public class GatekeeperFlagService {
                 id,
                 "ARCHIVED",
                 "Archived GateKeeper flag '" + gatekeeperFlag.getKey() + "'");
+        publishConfigChanged(gatekeeperFlag.getKey(), null, gatekeeperFlag.getId(), "FLAG_ARCHIVED");
     }
 
     @Transactional(readOnly = true)
@@ -123,5 +130,14 @@ public class GatekeeperFlagService {
                 .createdAt(gatekeeperFlag.getCreatedAt())
                 .updatedAt(gatekeeperFlag.getUpdatedAt())
                 .build();
+    }
+
+    private void publishConfigChanged(String flagKey, String previousFlagKey, Long entityId, String action) {
+        eventPublisher.publishEvent(GatekeeperConfigChangedEvent.of(
+                flagKey,
+                previousFlagKey,
+                "GATEKEEPER_FLAG",
+                entityId,
+                action));
     }
 }

@@ -5,6 +5,7 @@ import com.gatekeeper.dto.RuleRequest;
 import com.gatekeeper.dto.RuleResponse;
 import com.gatekeeper.dto.RuleStatusUpdateRequest;
 import com.gatekeeper.dto.UserTargetsRequest;
+import com.gatekeeper.messaging.GatekeeperConfigChangedEvent;
 import com.gatekeeper.model.Environment;
 import com.gatekeeper.model.GatekeeperFlag;
 import com.gatekeeper.model.FlagRule;
@@ -18,6 +19,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import static com.gatekeeper.config.CacheConfig.EVALUATION_CACHE;
@@ -31,6 +33,7 @@ public class RuleManagementService {
     private final FlagRuleRepository flagRuleRepository;
     private final UserTargetRepository userTargetRepository;
     private final AuditLogService auditLogService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     @CacheEvict(cacheNames = EVALUATION_CACHE, allEntries = true)
@@ -55,6 +58,7 @@ public class RuleManagementService {
                 "CREATED",
                 "Added " + savedRule.getRuleType() + " rule for flag '" + flag.getKey()
                         + "' in environment '" + environment.getName() + "'");
+        publishRuleConfigChanged(savedRule, "RULE_CREATED");
         return toResponse(savedRule);
     }
 
@@ -77,7 +81,9 @@ public class RuleManagementService {
                 rule.getId(),
                 "USER_TARGETS_UPDATED",
                 "Added user targets " + request.getUserIds() + " to rule " + rule.getId());
-        return toResponse(findRule(ruleId));
+        FlagRule refreshedRule = findRule(ruleId);
+        publishRuleConfigChanged(refreshedRule, "USER_TARGETS_UPDATED");
+        return toResponse(refreshedRule);
     }
 
     @Transactional
@@ -91,6 +97,7 @@ public class RuleManagementService {
                 savedRule.getId(),
                 "PERCENTAGE_UPDATED",
                 "Set percentage rollout to " + request.getPercentage() + " for rule " + savedRule.getId());
+        publishRuleConfigChanged(savedRule, "PERCENTAGE_UPDATED");
         return toResponse(savedRule);
     }
 
@@ -105,6 +112,7 @@ public class RuleManagementService {
                 savedRule.getId(),
                 "STATUS_UPDATED",
                 "Set rule " + savedRule.getId() + " enabled=" + request.isEnabled());
+        publishRuleConfigChanged(savedRule, "RULE_STATUS_UPDATED");
         return toResponse(savedRule);
     }
 
@@ -169,5 +177,13 @@ public class RuleManagementService {
                 .enabled(rule.isEnabled())
                 .userTargets(userTargets)
                 .build();
+    }
+
+    private void publishRuleConfigChanged(FlagRule rule, String action) {
+        eventPublisher.publishEvent(GatekeeperConfigChangedEvent.of(
+                rule.getFlag().getKey(),
+                "FLAG_RULE",
+                rule.getId(),
+                action));
     }
 }

@@ -1,6 +1,7 @@
 package com.gatekeeper;
 
 import com.gatekeeper.config.EvaluateRateLimitProperties;
+import com.gatekeeper.messaging.ConfigChangeMessagingProperties;
 import com.gatekeeper.sdk.GatekeeperSdkProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -9,7 +10,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 @SpringBootApplication
 @EnableConfigurationProperties({
         GatekeeperSdkProperties.class,
-        EvaluateRateLimitProperties.class
+        EvaluateRateLimitProperties.class,
+        ConfigChangeMessagingProperties.class
 })
 public class GateKeeperApplication {
 

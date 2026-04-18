@@ -77,6 +77,26 @@ class GatekeeperJavaClientTest {
         assertThat(fetcher.getCallCount()).isEqualTo(2);
     }
 
+    @Test
+    void evictsLocalCacheEntriesForChangedFlag() {
+        MutableClock clock = new MutableClock(Instant.parse("2026-03-23T12:00:00Z"));
+        FakeRemoteEvaluationFetcher fetcher = new FakeRemoteEvaluationFetcher();
+        fetcher.enqueue(true);
+        fetcher.enqueue(false);
+        GatekeeperJavaClient client = new GatekeeperJavaClient(fetcher, clock);
+
+        client.isEnabled("http://localhost:8080", "checkout", "alice", "prod", Duration.ofSeconds(30));
+        client.isEnabled("http://localhost:8080", "pricing", "alice", "prod", Duration.ofSeconds(30));
+
+        int evictedEntries = client.evictLocalCacheForFlag("checkout");
+
+        assertThat(evictedEntries).isEqualTo(1);
+        assertThat(client.getLocalCacheEntries())
+                .singleElement()
+                .extracting(GatekeeperJavaClient.CachedEvaluation::getFlagKey)
+                .isEqualTo("pricing");
+    }
+
     private static final class FakeRemoteEvaluationFetcher extends GatekeeperRemoteEvaluationFetcher {
         private final Deque<Boolean> enabledResponses = new ArrayDeque<>();
         private int callCount;
