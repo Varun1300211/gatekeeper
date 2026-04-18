@@ -179,6 +179,16 @@ This setup mirrors a typical cloud-native architecture where the application ser
 
 The hosted demo is intentionally kept lightweight to avoid maintaining always-on managed Redis/Kafka infrastructure for a portfolio project. Kafka-backed config-change propagation and SDK cache invalidation are fully implemented behind the `kafka` profile and can be demonstrated locally with Docker, while the deployed app can run on the simpler Render/Neon/Netlify path.
 
+## Redis Warmup
+
+A scheduled GitHub Actions workflow calls `/healthz` and `/api/evaluate` once per day to keep the deployed backend and Redis-backed evaluation path active. Configure these repository secrets before enabling it:
+
+- `GATEKEEPER_BACKEND_URL`: deployed backend URL, for example `https://gatekeeper-t5gd.onrender.com`
+- `GATEKEEPER_VIEWER_USERNAME`: viewer username
+- `GATEKEEPER_VIEWER_PASSWORD`: viewer password
+
+The workflow can also be run manually from GitHub Actions using `Redis Warmup` -> `Run workflow`.
+
 ## Future Improvements
 
 - Multivariate and JSON-backed flag values
