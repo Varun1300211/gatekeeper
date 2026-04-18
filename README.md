@@ -189,6 +189,20 @@ A scheduled GitHub Actions workflow calls `/healthz` and `/api/evaluate` once pe
 
 The workflow can also be run manually from GitHub Actions using `Redis Warmup` -> `Run workflow`.
 
+## Load Testing
+
+The evaluation hot path can be validated with a lightweight curl-based load test:
+
+```bash
+GATEKEEPER_BASE_URL=http://localhost:8080 \
+GATEKEEPER_USERNAME=viewer \
+GATEKEEPER_PASSWORD=viewer123 \
+REQUESTS=500 \
+bash scripts/load-test-evaluate.sh
+```
+
+The script rotates through multiple flags, users, and environments, then reports success counts and latency percentiles. It sends a unique `X-API-Key` per request to simulate multiple clients without tripping the per-client rate limiter.
+
 ## Future Improvements
 
 - Multivariate and JSON-backed flag values
